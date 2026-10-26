@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { WantedListPage } from './pages/WantedListPage'
 
 function RootRedirect() {
   const { status } = useAuth()
@@ -24,6 +25,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="wanted" element={<WantedListPage />} />
           </Route>
         </Route>
 
