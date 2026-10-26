@@ -1,0 +1,36 @@
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { AuthBoundary } from './auth/AuthBoundary'
+import { ProtectedRoute } from './auth/ProtectedRoute'
+import { useAuth } from './auth/useAuth'
+import { AppShell } from './components/AppShell'
+import { DashboardPage } from './pages/DashboardPage'
+import { LoginPage } from './pages/LoginPage'
+import { NotFoundPage } from './pages/NotFoundPage'
+import { RegisterPage } from './pages/RegisterPage'
+
+function RootRedirect() {
+  const { status } = useAuth()
+  return <Navigate to={status === 'authenticated' ? '/dashboard' : '/login'} replace />
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route element={<AuthBoundary />}>
+        <Route index element={<RootRedirect />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppShell />}>
+            <Route path="dashboard" element={<DashboardPage />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
+  )
+}
+
+export default App
