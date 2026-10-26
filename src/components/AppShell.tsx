@@ -24,6 +24,18 @@ export function AppShell() {
             >
               Dashboard
             </NavLink>
+            <NavLink
+              to="/wanted"
+              className={({ isActive }) =>
+                `rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  isActive
+                    ? 'bg-cyan-300/10 text-cyan-200'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }`
+              }
+            >
+              Carteles
+            </NavLink>
           </nav>
 
           <div className="flex items-center gap-3">
