@@ -1,0 +1,9 @@
+{
+  "teamCode": "TEAM-XXX",
+  "teamName": "COMPLETAR_NOMBRE_DE_LA_TRIPULACION",
+  "members": [
+    { "name": "Valentina Puicon", "code": "COMPLETAR_CODIGO" },
+    { "name": "Jocelyn Uceda", "code": "COMPLETAR_CODIGO" },
+    { "name": "Nayra Paredes", "code": "COMPLETAR_CODIGO" }
+  ]
+}

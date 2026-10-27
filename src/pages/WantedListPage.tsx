@@ -45,6 +45,30 @@ const STATUS_STYLES: Record<WantedStatus, string> = {
 
 const SEARCH_DELAY_MS = 400
 
+// Al entrar a un cartel se guarda desde qué URL del listado y a qué altura del scroll
+// estaba el usuario, para dejarlo exactamente igual al volver.
+const SCROLL_KEY = 'wanted-list-scroll'
+
+type SavedScroll = { list: string; y: number }
+
+function saveListScroll(list: string) {
+  try {
+    sessionStorage.setItem(SCROLL_KEY, JSON.stringify({ list, y: window.scrollY }))
+  } catch {
+    // Sin sessionStorage (modo privado) simplemente no se restaura el scroll.
+  }
+}
+
+function takeListScroll(): SavedScroll | null {
+  try {
+    const raw = sessionStorage.getItem(SCROLL_KEY)
+    sessionStorage.removeItem(SCROLL_KEY)
+    return raw ? (JSON.parse(raw) as SavedScroll) : null
+  } catch {
+    return null
+  }
+}
+
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError'
 }
@@ -157,6 +181,15 @@ export function WantedListPage() {
   const isLoading = state.status !== 'error' && !data
   const totalPages = data?.totalPages ?? 0
   const hasFilters = Boolean(query.q || query.status || query.crewId || query.fruit)
+  const currentList = `${location.pathname}${location.search}`
+
+  // Cuando el listado ya se dibujó con datos, si venimos del detalle se vuelve
+  // a la misma altura del scroll que tenía el usuario.
+  useEffect(() => {
+    if (!data) return
+    const saved = takeListScroll()
+    if (saved && saved.list === currentList) window.scrollTo(0, saved.y)
+  }, [data, currentList])
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
@@ -176,7 +209,7 @@ export function WantedListPage() {
 
       {/* Altura mínima fija: loading, error y vacío ocupan el mismo espacio y el layout no salta. */}
       <section aria-live="polite" aria-busy={isLoading} className="panel min-h-[36rem] overflow-hidden">
-        {isLoading && <Skeleton />}
+        {isLoading && <Skeleton rows={query.size} />}
 
         {state.status === 'error' && <ListErrorState message={state.message} onRetry={() => setRetryCount(n => n + 1)} />}
 
@@ -185,7 +218,7 @@ export function WantedListPage() {
         {data && data.content.length > 0 && (
           <ul className="divide-y divide-white/5">
             {data.content.map((w) => (
-              <WantedCard key={w.id} wanted={w} fromList={`${location.pathname}${location.search}`} />
+              <WantedCard key={w.id} wanted={w} fromList={currentList} />
             ))}
           </ul>
         )}
@@ -196,10 +229,12 @@ export function WantedListPage() {
   )
 }
 
-export function Skeleton() {
+export function Skeleton({ rows }: { rows: number }) {
   return (
     <ul className="divide-y divide-white/5" aria-label="Cargando carteles">
-      {Array.from({ length: 9 }, (_, i) => (
+      {/* Tantas filas como el tamaño de página: al cargar, la lista ocupa lo mismo
+          que la página que va a llegar y la paginación no salta. */}
+      {Array.from({ length: rows }, (_, i) => (
         <li key={i} className="flex h-16 animate-pulse items-center gap-4 px-4 motion-reduce:animate-none">
           <div className="flex-1 space-y-2">
             <div className="h-4 w-1/3 rounded bg-white/10" />
@@ -357,6 +392,7 @@ export function WantedCard({ wanted, fromList }: { wanted: WantedSummary; fromLi
                 <Link
                   to={`/wanted/${wanted.id}`}
                   state={{ fromList: fromList }}
+                  onClick={() => saveListScroll(fromList)}
                   className="flex h-16 items-center gap-4 px-4 hover:bg-white/5"
                 >
                   <div className="min-w-0 flex-1">
