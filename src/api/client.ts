@@ -11,6 +11,7 @@ export class ApiError extends Error {
   readonly code: string
   readonly details: ApiErrorBody['details']
   readonly traceId?: string
+  readonly current: unknown
 
   constructor(body: ApiErrorBody) {
     super(body.message)
@@ -19,6 +20,7 @@ export class ApiError extends Error {
     this.code = body.code
     this.details = body.details
     this.traceId = body.traceId
+    this.current = body.current
   }
 }
 

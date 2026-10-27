@@ -31,6 +31,8 @@ export type ApiErrorBody = {
   traceId: string
   details?: ApiErrorDetail[]
   retryAfterSeconds?: number
+  // Solo en 409 NEWS_ALREADY_VERIFIED: la noticia tal como está ahora.
+  current?: unknown
 }
 
 export type WantedStatus = 'AT_LARGE' | 'CAPTURED' | 'MISSING'

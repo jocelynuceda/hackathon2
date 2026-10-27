@@ -5,6 +5,8 @@ import { useAuth } from './auth/useAuth'
 import { AppShell } from './components/AppShell'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
+import { NewsDetailDialog } from './pages/NewsDetailDialog'
+import { NewsFeedPage } from './pages/NewsFeedPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { WantedListPage } from './pages/WantedListPage'
@@ -27,6 +29,9 @@ function App() {
           <Route element={<AppShell />}>
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="wanted" element={<WantedListPage />} />
+            <Route path="news" element={<NewsFeedPage />}>
+              <Route path=":id" element={<NewsDetailDialog />} />
+            </Route>
             <Route path="wanted/:id" element={<WantedDetailPage />} />
           </Route>
         </Route>
