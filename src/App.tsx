@@ -11,6 +11,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { WantedListPage } from './pages/WantedListPage'
 import { WantedDetailPage } from './pages/WantedDetailPage'
+import { SagasPage } from './pages/SagasPage'
 import { SagaStoryPage } from './pages/SagaStoryPage'
 
 function RootRedirect() {
@@ -34,6 +35,7 @@ function App() {
               <Route path=":id" element={<NewsDetailDialog />} />
             </Route>
             <Route path="wanted/:id" element={<WantedDetailPage />} />
+            <Route path="sagas" element={<SagasPage />} />
             <Route path="sagas/:id" element={<SagaStoryPage />} />
           </Route>
         </Route>
