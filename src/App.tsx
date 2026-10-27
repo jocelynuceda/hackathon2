@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { WantedListPage } from './pages/WantedListPage'
+import { WantedDetailPage } from './pages/WantedDetailPage'
 
 function RootRedirect() {
   const { status } = useAuth()
@@ -26,6 +27,7 @@ function App() {
           <Route element={<AppShell />}>
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="wanted" element={<WantedListPage />} />
+            <Route path="wanted/:id" element={<WantedDetailPage />} />
           </Route>
         </Route>
 
