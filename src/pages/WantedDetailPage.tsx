@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { getWantedById } from '../api/wanted'
 import { useAuth } from '../auth/useAuth'
@@ -45,6 +45,7 @@ export function WantedDetailPage() {
 function WantedDetailContent({ id }: { id: string }) {
   const { token } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const fromList = (location.state as { fromList?: unknown } | null)?.fromList
   const returnTo =
     typeof fromList === 'string' && /^\/wanted(?:\?|$)/.test(fromList)
@@ -79,7 +80,18 @@ function WantedDetailContent({ id }: { id: string }) {
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-8 lg:px-8">
-      <Link to={returnTo} className="mb-6 inline-block text-sm text-cyan-300 underline">
+      <Link
+        to={returnTo}
+        onClick={(event) => {
+          // Si llegamos desde el listado, volver atrás en el historial no crea una
+          // entrada nueva: el botón atrás del navegador sigue funcionando bien.
+          if (typeof fromList === 'string') {
+            event.preventDefault()
+            navigate(-1)
+          }
+        }}
+        className="mb-6 inline-block text-sm text-cyan-300 underline"
+      >
         ← Volver al listado
       </Link>
 
