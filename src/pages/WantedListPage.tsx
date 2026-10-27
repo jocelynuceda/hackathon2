@@ -14,6 +14,7 @@ import {
   type WantedQuery,
   type WantedSort,
   type WantedStatus,
+  type WantedSummary,
 } from '../types/wanted'
 import { parseWantedQuery, serializeWantedQuery } from './wantedQuery'
 
@@ -166,14 +167,65 @@ export function WantedListPage() {
         </p>
       </header>
 
-      <section aria-label="Filtros" className="mb-4 grid gap-3 panel p-4 sm:grid-cols-2 lg:grid-cols-6">
+      <FiltersBar query={query} searchInput={searchInput} crews={crews} hasFilters={hasFilters}
+        onSearchChange={handleSearchChange} updateQuery={updateQuery} onClear={() => {
+          window.clearTimeout(searchTimer.current)
+          setSearchInput('')
+          updateQuery({ q: '', status: null, crewId: null, fruit: null })
+        }} />
+
+      {/* Altura mínima fija: loading, error y vacío ocupan el mismo espacio y el layout no salta. */}
+      <section aria-live="polite" aria-busy={isLoading} className="panel min-h-[36rem] overflow-hidden">
+        {isLoading && <Skeleton />}
+
+        {state.status === 'error' && <ListErrorState message={state.message} onRetry={() => setRetryCount(n => n + 1)} />}
+
+        {data && data.content.length === 0 && <EmptyState hasFilters={hasFilters} />}
+
+        {data && data.content.length > 0 && (
+          <ul className="divide-y divide-white/5">
+            {data.content.map((w) => (
+              <WantedCard key={w.id} wanted={w} fromList={`${location.pathname}${location.search}`} />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <Pagination page={query.page} totalPages={totalPages} enabled={Boolean(data)} onPageChange={(page) => updateQuery({ page })} />
+    </main>
+  )
+}
+
+export function Skeleton() {
+  return (
+    <ul className="divide-y divide-white/5" aria-label="Cargando carteles">
+      {Array.from({ length: 9 }, (_, i) => (
+        <li key={i} className="flex h-16 animate-pulse items-center gap-4 px-4 motion-reduce:animate-none">
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-1/3 rounded bg-white/10" />
+            <div className="h-3 w-1/2 rounded bg-white/5" />
+          </div>
+          <div className="h-6 w-28 rounded-full bg-white/5" />
+          <div className="h-4 w-40 rounded bg-white/10" />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function FiltersBar({ query, searchInput, crews, hasFilters, onSearchChange, updateQuery, onClear }: {
+  query: WantedQuery; searchInput: string; crews: Crew[]; hasFilters: boolean;
+  onSearchChange: (value: string) => void; updateQuery: (patch: Partial<WantedQuery>) => void; onClear: () => void;
+}) {
+  return (
+    <section aria-label="Filtros" className="mb-4 grid gap-3 panel p-4 sm:grid-cols-2 lg:grid-cols-6">
         <label className="flex flex-col gap-1 text-sm lg:col-span-2">
           <span className="font-medium text-slate-300">Buscar</span>
           <input
             type="search"
             value={searchInput}
             maxLength={100}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Nombre o epíteto"
             className="input"
           />
@@ -263,112 +315,73 @@ export function WantedListPage() {
           <button
             type="button"
             disabled={!hasFilters}
-            onClick={() => {
-              window.clearTimeout(searchTimer.current)
-              setSearchInput('')
-              updateQuery({ q: '', status: null, crewId: null, fruit: null })
-            }}
+            onClick={onClear}
             className="text-sm text-cyan-300 underline disabled:invisible"
           >
             Limpiar filtros
           </button>
         </div>
       </section>
+  )
+}
 
-      {/* Altura mínima fija: loading, error y vacío ocupan el mismo espacio y el layout no salta. */}
-      <section aria-live="polite" aria-busy={isLoading} className="panel min-h-[36rem] overflow-hidden">
-        {isLoading && <LoadingRows />}
-
-        {state.status === 'error' && (
-          <div className="flex min-h-[36rem] flex-col items-center justify-center gap-3 p-6 text-center">
-            <p className="font-medium text-rose-300">No se pudieron cargar los carteles.</p>
-            <p className="text-sm text-slate-400">{state.message}</p>
-            <button
-              type="button"
-              onClick={() => setRetryCount((n) => n + 1)}
-              className="button-primary"
-            >
-              Reintentar
-            </button>
-          </div>
-        )}
-
-        {data && data.content.length === 0 && (
-          <div className="flex min-h-[36rem] flex-col items-center justify-center gap-2 p-6 text-center">
-            <p className="font-medium text-slate-200">No hay carteles con estos filtros.</p>
-            {hasFilters && <p className="text-sm text-slate-400">Prueba con otra búsqueda o limpia los filtros.</p>}
-          </div>
-        )}
-
-        {data && data.content.length > 0 && (
-          <ul className="divide-y divide-white/5">
-            {data.content.map((w) => (
-              <li key={w.id}>
-                <Link
-                  to={`/wanted/${w.id}`}
-                  state={{ fromList: `${location.pathname}${location.search}` }}
-                  className="flex h-16 items-center gap-4 px-4 hover:bg-white/5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">{w.name}</p>
-                    <p className="truncate text-sm text-slate-400">
-                      "{w.epithet}" · {w.crew.name}
-                    </p>
-                  </div>
-                  <span className="hidden w-28 truncate text-sm text-slate-400 md:block">
-                    {w.devilFruit ? FRUIT_LABELS[w.devilFruit.type] : 'Sin fruta'}
-                  </span>
-                  <span className={`w-28 rounded-full px-2 py-1 text-center text-xs font-medium ${STATUS_STYLES[w.status]}`}>
-                    {STATUS_LABELS[w.status]}
-                  </span>
-                  <span className="w-40 text-right font-mono text-sm font-semibold text-amber-300">
-                    ฿ {berries.format(w.bounty)}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <nav aria-label="Paginación" className="mt-4 flex items-center justify-between gap-2 text-sm">
+export function Pagination({ page, totalPages, enabled, onPageChange }: { page: number; totalPages: number; enabled: boolean; onPageChange: (page: number) => void }) {
+  return (
+    <nav aria-label="Paginación" className="mt-4 flex items-center justify-between gap-2 text-sm">
         <button
           type="button"
-          disabled={!data || query.page === 0}
-          onClick={() => updateQuery({ page: query.page - 1 })}
+          disabled={!enabled || page === 0}
+          onClick={() => onPageChange(page - 1)}
           className="rounded-xl border border-white/10 px-3 py-2 text-slate-200 transition hover:bg-white/5 disabled:opacity-40"
         >
           ← Anterior
         </button>
         <span className="text-slate-400">
-          Página {totalPages === 0 ? 0 : query.page + 1} de {totalPages}
+          Página {totalPages === 0 ? 0 : page + 1} de {totalPages}
         </span>
         <button
           type="button"
-          disabled={!data || query.page >= totalPages - 1}
-          onClick={() => updateQuery({ page: query.page + 1 })}
+          disabled={!enabled || page >= totalPages - 1}
+          onClick={() => onPageChange(page + 1)}
           className="rounded-xl border border-white/10 px-3 py-2 text-slate-200 transition hover:bg-white/5 disabled:opacity-40"
         >
           Siguiente →
         </button>
       </nav>
-    </main>
   )
 }
 
-function LoadingRows() {
+export function WantedCard({ wanted, fromList }: { wanted: WantedSummary; fromList: string }) {
   return (
-    <ul className="divide-y divide-white/5" aria-label="Cargando carteles">
-      {Array.from({ length: 9 }, (_, i) => (
-        <li key={i} className="flex h-16 animate-pulse items-center gap-4 px-4 motion-reduce:animate-none">
-          <div className="flex-1 space-y-2">
-            <div className="h-4 w-1/3 rounded bg-white/10" />
-            <div className="h-3 w-1/2 rounded bg-white/5" />
-          </div>
-          <div className="h-6 w-28 rounded-full bg-white/5" />
-          <div className="h-4 w-40 rounded bg-white/10" />
-        </li>
-      ))}
-    </ul>
+    <li>
+                <Link
+                  to={`/wanted/${wanted.id}`}
+                  state={{ fromList: fromList }}
+                  className="flex h-16 items-center gap-4 px-4 hover:bg-white/5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-white">{wanted.name}</p>
+                    <p className="truncate text-sm text-slate-400">
+                      "{wanted.epithet}" · {wanted.crew.name}
+                    </p>
+                  </div>
+                  <span className="hidden w-28 truncate text-sm text-slate-400 md:block">
+                    {wanted.devilFruit ? FRUIT_LABELS[wanted.devilFruit.type] : 'Sin fruta'}
+                  </span>
+                  <span className={`w-28 rounded-full px-2 py-1 text-center text-xs font-medium ${STATUS_STYLES[wanted.status]}`}>
+                    {STATUS_LABELS[wanted.status]}
+                  </span>
+                  <span className="w-40 text-right font-mono text-sm font-semibold text-amber-300">
+                    ฿ {berries.format(wanted.bounty)}
+                  </span>
+                </Link>
+              </li>
   )
+}
+
+export function ListErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return <div className="flex min-h-[36rem] flex-col items-center justify-center gap-3 p-6 text-center" role="alert"><p className="font-medium text-rose-300">No se pudieron cargar los carteles.</p><p className="text-sm text-slate-400">{message}</p><button type="button" onClick={onRetry} className="button-primary">Reintentar</button></div>
+}
+export function EmptyState({ hasFilters }: { hasFilters: boolean }) {
+  return <div className="flex min-h-[36rem] flex-col items-center justify-center gap-2 p-6 text-center"><p className="font-medium text-slate-200">No hay carteles con estos filtros.</p>{hasFilters && <p className="text-sm text-slate-400">Prueba con otra búsqueda o limpia los filtros.</p>}</div>
 }
